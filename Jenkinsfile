@@ -26,7 +26,7 @@ pipeline {
                     // Use AWS credentials to authenticate with EKS
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                         // Update kubeconfig to access EKS
-                        sh "aws eks update-kubeconfig --name your-cluster-name --region your-region"
+                        sh "aws eks update-kubeconfig --name certs --region us-west-2"
                         
                         // Get the current resource version of the secret in the source namespace
                         def secret = sh(script: "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o jsonpath='{.metadata.resourceVersion}'", returnStdout: true).trim()
