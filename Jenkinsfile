@@ -57,9 +57,10 @@ pipeline {
                     // Download the secret from the source namespace
                     sh "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o yaml | kubectl apply -f - -n ${NAMESPACE_SOURCE}" 
                     
-                    // Apply the secret to each target namespace
-                    for (namespace in env.NAMESPACES_TARGET) {
-                        sh "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o yaml | kubectl apply -f - -n ${namespace}"
+                    // Convert NAMESPACES_TARGET into a list and apply the secret to each target namespace
+                    def targetNamespaces = env.NAMESPACES_TARGET.split(',')
+                    for (namespace in targetNamespaces) {
+                        sh "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o yaml | kubectl apply -f - -n ${namespace.trim()}"
                     }
 
                     // Update and commit the new resource version
