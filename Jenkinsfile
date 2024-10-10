@@ -23,18 +23,21 @@ pipeline {
         stage('Get Resource Version') {
             steps {
                 script {
-                    // Use AWS credentials to authenticate with EKS
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                        // Update kubeconfig to access EKS
-                        sh "aws eks update-kubeconfig --name certs --region us-west-2"
-                        
-                        // Get the current resource version of the secret in the source namespace
-                        def secret = sh(script: "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o jsonpath='{.metadata.resourceVersion}'", returnStdout: true).trim()
-                        env.CURRENT_RESOURCE_VERSION = secret
-                    }
-                }
+            // Use AWS credentials to authenticate with EKS
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                // Update kubeconfig to access EKS
+                sh "aws eks update-kubeconfig --name your-cluster-name --region your-region"
+                
+                // Debug: Check current context
+                sh "kubectl config current-context"
+                
+                // Get the current resource version of the secret in the source namespace
+                def secret = sh(script: "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o jsonpath='{.metadata.resourceVersion}'", returnStdout: true).trim()
+                env.CURRENT_RESOURCE_VERSION = secret
             }
         }
+    }
+}
 
         stage('Check Resource Version') {
             steps {
