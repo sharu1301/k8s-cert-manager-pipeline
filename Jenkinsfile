@@ -23,9 +23,15 @@ pipeline {
         stage('Get Resource Version') {
             steps {
                 script {
-                    // Get the current resource version of the secret in the source namespace
-                    def secret = sh(script: "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o jsonpath='{.metadata.resourceVersion}'", returnStdout: true).trim()
-                    env.CURRENT_RESOURCE_VERSION = secret
+                    // Use AWS credentials to authenticate with EKS
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                        // Update kubeconfig to access EKS
+                        sh "aws eks update-kubeconfig --name your-cluster-name --region your-region"
+                        
+                        // Get the current resource version of the secret in the source namespace
+                        def secret = sh(script: "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o jsonpath='{.metadata.resourceVersion}'", returnStdout: true).trim()
+                        env.CURRENT_RESOURCE_VERSION = secret
+                    }
                 }
             }
         }
@@ -54,7 +60,7 @@ pipeline {
             }
             steps {
                 script {
-                    // Download the secret from the source namespace
+                    // Download the secret from the source namespace and apply it
                     sh "kubectl get secret ${SECRET_NAME} -n ${NAMESPACE_SOURCE} -o yaml | kubectl apply -f - -n ${NAMESPACE_SOURCE}" 
                     
                     // Convert NAMESPACES_TARGET into a list and apply the secret to each target namespace
