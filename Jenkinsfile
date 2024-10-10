@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NAMESPACE_SOURCE = 'namespace1'  // Replace with your source namespace
-        NAMESPACES_TARGET = ['namespace2', 'namespace3']  // Replace with your target namespaces
+        NAMESPACES_TARGET = "namespace2,namespace3"  // Replace with your target namespaces
         SECRET_NAME = 'my-tls-secret'  // Replace with your secret name
         RESOURCE_VERSION_FILE = 'resource_version.txt'  // File to store the resource version
     }
