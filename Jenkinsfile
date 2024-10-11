@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         KUBE_CONTEXT = 'arn:aws:eks:us-west-2:340752821725:cluster/certs'
-        CONFIG_FILE = 'config.yaml' // Assume this is in your workspace
+        CONFIG_FILE = '/root/.kube/config' // Assume this is in your workspace
         RESOURCE_VERSION_FILE = 'resource_version.txt'
         SECRET_NAME = 'my-tls-secret'
         AWS_DEFAULT_REGION = 'us-west-2'
