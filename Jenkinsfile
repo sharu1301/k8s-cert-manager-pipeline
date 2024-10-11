@@ -21,7 +21,7 @@ pipeline {
         stage('Process Configuration') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'jenkins-sa-token', serverUrl: 'https://REPLACE_WITH_YOUR_EKS_API_SERVER_URL']) {
+                    withKubeConfig([credentialsId: 'jenkins-sa-token', serverUrl: 'https://34C14598A0592BA431A023EF404765AE.gr7.us-west-2.eks.amazonaws.com']) {
                         // Load and parse the YAML configuration
                         def config = readYaml file: CONFIG_FILE
 
