@@ -21,7 +21,7 @@ pipeline {
         stage('Process Configuration') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'jenkins-sa-token', serverUrl: 'https://34C14598A0592BA431A023EF404765AE.gr7.us-west-2.eks.amazonaws.com']) {
+                    withKubeConfig([credentialsId: 'jenkins-sa-token', serverUrl: 'https://REPLACE_WITH_YOUR_EKS_API_SERVER_URL']) {
                         // Load and parse the YAML configuration
                         def config = readYaml file: CONFIG_FILE
 
@@ -32,28 +32,32 @@ pipeline {
                                 def secretName = secret.secret
                                 def storedVersion = secret.resourceVersion
 
-                                def currentVersion = sh(
-                                    script: "kubectl get secret ${secretName} -n ${sourceNamespace} -o jsonpath='{.metadata.resourceVersion}' || echo 'not_found'",
-                                    returnStdout: true
-                                ).trim()
-
-                                if (currentVersion != 'not_found' && currentVersion != storedVersion) {
-                                    echo "Secret ${secretName} resourceVersion changed. Triggering refresh."
-
-                                    def secretYaml = sh(
-                                        script: "kubectl get secret ${secretName} -n ${sourceNamespace} -o yaml",
+                                try {
+                                    def currentVersion = sh(
+                                        script: "kubectl get secret ${secretName} -n ${sourceNamespace} -o jsonpath='{.metadata.resourceVersion}' || echo 'not_found'",
                                         returnStdout: true
                                     ).trim()
 
-                                    origin.destinations.each { destination ->
-                                        echo "Applying secret ${secretName} to namespace ${destination}."
-                                        writeFile file: 'temp_secret.yaml', text: secretYaml.replaceAll("namespace: ${sourceNamespace}", "namespace: ${destination}")
-                                        sh "kubectl apply -f temp_secret.yaml -n ${destination}"
-                                    }
+                                    if (currentVersion != 'not_found' && currentVersion != storedVersion) {
+                                        echo "Secret ${secretName} resourceVersion changed. Triggering refresh."
 
-                                    updateStoredResourceVersion(secretName, currentVersion)
-                                } else {
-                                    echo "Secret ${secretName} resourceVersion unchanged. Skipping refresh."
+                                        def secretYaml = sh(
+                                            script: "kubectl get secret ${secretName} -n ${sourceNamespace} -o yaml",
+                                            returnStdout: true
+                                        ).trim()
+
+                                        origin.destinations.each { destination ->
+                                            echo "Applying secret ${secretName} to namespace ${destination}."
+                                            writeFile file: 'temp_secret.yaml', text: secretYaml.replaceAll("namespace: ${sourceNamespace}", "namespace: ${destination}")
+                                            sh "kubectl apply -f temp_secret.yaml -n ${destination}"
+                                        }
+
+                                        updateStoredResourceVersion(secretName, currentVersion)
+                                    } else {
+                                        echo "Secret ${secretName} resourceVersion unchanged. Skipping refresh."
+                                    }
+                                } catch (Exception e) {
+                                    echo "Error processing secret ${secretName} in namespace ${sourceNamespace}: ${e.message}"
                                 }
                             }
                         }
@@ -75,7 +79,7 @@ def updateStoredResourceVersion(secretName, newVersion) {
             git config --local user.email "${GIT_USER}@example.com"
             git add ${RESOURCE_VERSION_FILE}
             git commit -m 'Updated resourceVersion for ${secretName} on \$(date)'
-            git push origin main
+            git push origin main // Consider using a variable for branch
         """
     }
 }
