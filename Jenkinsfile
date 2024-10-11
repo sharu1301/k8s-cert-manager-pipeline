@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         KUBE_CONTEXT = 'arn:aws:eks:us-west-2:340752821725:cluster/certs' // Replace with your actual Kubernetes context
-        CONFIG_FILE = '/root/.kube/config.yaml' // The configuration file in the repository
+        CONFIG_FILE = '/root/.kube/config' // The configuration file in the repository
         RESOURCE_VERSION_FILE = 'resource_version.txt' // File to store resource versions
         SECRET_NAME = 'my-tls-secret' // Replace with your actual secret name if fixed
     }
