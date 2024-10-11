@@ -1,11 +1,10 @@
 pipeline {
     agent any
     environment {
-        KUBE_CONTEXT = 'arn:aws:eks:us-west-2:340752821725:cluster/certs'
-        CONFIG_FILE = '/root/.kube/config' // Assume this is in your workspace
+        CONFIG_FILE = '/tmp/kubeconfig'
         RESOURCE_VERSION_FILE = 'resource_version.txt'
-        SECRET_NAME = 'my-tls-secret'
         AWS_DEFAULT_REGION = 'us-west-2'
+        CLUSTER_NAME = 'certs'
     }
     stages {
         stage('Setup') {
@@ -13,7 +12,8 @@ pipeline {
                 script {
                     // Configure AWS CLI and update kubeconfig
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                        sh "aws eks update-kubeconfig --name certs --region ${AWS_DEFAULT_REGION}"
+                        sh "aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_DEFAULT_REGION} --kubeconfig ${CONFIG_FILE}"
+                        env.EKS_ENDPOINT = sh(script: "aws eks describe-cluster --name ${CLUSTER_NAME} --query cluster.endpoint --output text", returnStdout: true).trim()
                     }
                 }
             }
@@ -21,7 +21,7 @@ pipeline {
         stage('Process Configuration') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'jenkins-sa-token', serverUrl: 'https://34C14598A0592BA431A023EF404765AE.gr7.us-west-2.eks.amazonaws.com']) {
+                    withKubeConfig([credentialsId: 'jenkins-sa-token', serverUrl: env.EKS_ENDPOINT, kubeconfigId: CONFIG_FILE]) {
                         // Load and parse the YAML configuration
                         def config = readYaml file: CONFIG_FILE
 
@@ -60,6 +60,11 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }
